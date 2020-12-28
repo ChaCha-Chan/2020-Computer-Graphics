@@ -29,9 +29,13 @@ protected:
     void draw1();
     void draw2();
     void draw3();
-    int u_num = 640, v_num = 1280;
+
+    int u_num = 20, v_num = 40;
     GLfloat r = 1.0f;
+
     GLuint VBO, VAO, EBO;
+
+    LARGE_INTEGER  freq, start, end;
     QTimer* timer;
 };
 #endif // MYGLWIDGET_H

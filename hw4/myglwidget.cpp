@@ -6,7 +6,7 @@ MyGLWidget::MyGLWidget(QWidget *parent)
 	:QOpenGLWidget(parent)
 {
 	timer = new QTimer(this); 
-	timer->start(3000);
+	timer->start(300);
 	connect(timer, SIGNAL(timeout()), this, SLOT(update())); 
 }
 
@@ -20,6 +20,7 @@ void MyGLWidget::initializeGL()
 	initializeOpenGLFunctions();
 	glViewport(0, 0, width(), height());
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	QueryPerformanceFrequency(&freq);
 }
 
 GLfloat* get_point_on_ball(GLfloat u, GLfloat v, GLfloat r) {
@@ -104,11 +105,13 @@ void MyGLWidget::init_vbo_with_indices(GLfloat* ball, GLint* indices) {
 void MyGLWidget::draw1() {
 	GLfloat* ball = new GLfloat[6 * 3 * u_num * v_num];
 	create_ball(ball);
+	QueryPerformanceCounter(&start);
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < 6 * 3 * u_num * v_num; i += 3) {
 		glVertex3f(ball[i], ball[i + 1], ball[i + 2]);
 	}
 	glEnd();
+	QueryPerformanceCounter(&end);
 	delete[] ball;
 }
 //Ê¹ÓÃVBO
@@ -117,7 +120,9 @@ void MyGLWidget::draw2() {
 	GLfloat* ball = new GLfloat[6 * 3 * u_num * v_num];
 	create_ball(ball);
 	init_vbo(ball);
+	QueryPerformanceCounter(&start);
 	glDrawArrays(GL_TRIANGLES, 0, 6 * u_num * v_num);
+	QueryPerformanceCounter(&end);
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	delete[] ball;
@@ -134,7 +139,9 @@ void MyGLWidget::draw3() {
 		memcpy(indices + i, index, sizeof(GLint) * 6);
 	}
 	init_vbo_with_indices(ball, indices);
+	QueryPerformanceCounter(&start);
 	glDrawElements(GL_TRIANGLES, 6 * u_num * v_num, GL_UNSIGNED_INT, 0);
+	QueryPerformanceCounter(&end);
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
@@ -160,26 +167,24 @@ void MyGLWidget::paintGL()
 
 	glColor3f(1.0f, 1.0f, 0.0f);
 
-	static int cnt = 0;
-	static double total_time = 0.0;
-	double current_time;
-
-	LARGE_INTEGER  freq, start, end;
-	QueryPerformanceFrequency(&freq);
-	QueryPerformanceCounter(&start);
 
 	//draw1();
 	//draw2();
 	draw3();
 
-	QueryPerformanceCounter(&end);
+    static int cnt = 0;
+    static double total_time = 0.0;
+    double current_time;
 	cnt += 1;
-	current_time = (__int64)(end.QuadPart - start.QuadPart) * 1000 / (double)freq.QuadPart;
-	total_time += current_time;
-	printf(" %lfms\n\n", current_time);
-	if (cnt % 10 == 0) {
-		printf(" cnt = %d, avg_time = %lfms.\n\n", cnt, total_time / cnt);
+	if (cnt > 10){
+		current_time = (__int64)(end.QuadPart - start.QuadPart) * 1000 / (double)freq.QuadPart;
+		total_time += current_time;
+		printf(" %lfms\n\n", current_time);
+		if (cnt % 10 == 0) {
+			printf(" cnt = %d, avg_time = %lfms.\n\n", (cnt - 10), total_time / (cnt - 10));
+		}
 	}
+
 }
 
 void MyGLWidget::resizeGL(int width, int height)
